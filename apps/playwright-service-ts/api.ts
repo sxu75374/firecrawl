@@ -99,8 +99,8 @@ const initializeBrowser = async () => {
   });
 };
 
-const createContext = async (skipTlsVerification: boolean = false) => {
-  const userAgent = new UserAgent().toString();
+const createContext = async (skipTlsVerification: boolean = false, customUserAgent?: string) => {
+  const userAgent = customUserAgent || new UserAgent().toString();
   const viewport = { width: 1280, height: 800 };
 
   const contextOptions: any = {
@@ -252,7 +252,14 @@ app.post('/scrape', async (req: Request, res: Response) => {
   let page: Page | null = null;
 
   try {
-    requestContext = await createContext(skip_tls_verification);
+    // Extract user-agent from headers to set at the context level,
+    // since Playwright's context-level userAgent takes precedence over
+    // setExtraHTTPHeaders for the User-Agent header.
+    const customUserAgent = headers
+      ? Object.entries(headers).find(([key]) => key.toLowerCase() === 'user-agent')?.[1]
+      : undefined;
+
+    requestContext = await createContext(skip_tls_verification, customUserAgent);
     page = await requestContext.newPage();
 
     if (headers) {
