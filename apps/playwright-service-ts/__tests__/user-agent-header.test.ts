@@ -126,7 +126,7 @@ describe('scrape endpoint user-agent header', () => {
   it('should use custom user-agent when provided in headers', async () => {
     const customUA = 'MyCustomBot/1.0 (test-suite)';
 
-    const resp = await postScrape(`http://host.docker.internal:${ECHO_PORT}`.replace('host.docker.internal', 'localhost'), {
+    const resp = await postScrape(`http://localhost:${ECHO_PORT}`, {
       'user-agent': customUA,
     });
 
@@ -138,11 +138,13 @@ describe('scrape endpoint user-agent header', () => {
     const resp = await postScrape(`http://localhost:${ECHO_PORT}`);
 
     expect(resp.status).toBe(200);
-    // Should be set to something (random UA), not undefined
+    // Should be set to a random UA from the user-agents package, not undefined
     expect(capturedUserAgent).toBeDefined();
     expect(capturedUserAgent!.length).toBeGreaterThan(0);
-    // Should NOT be the default Playwright/Chromium UA (starts with "Mozilla/")
+    // Random UA should look like a real browser (starts with "Mozilla/")
+    // and should NOT contain "HeadlessChrome" (raw Playwright default)
     expect(capturedUserAgent).toMatch(/^Mozilla\//);
+    expect(capturedUserAgent).not.toMatch(/HeadlessChrome/);
   }, 30_000);
 
   it('should forward other headers alongside custom user-agent', async () => {

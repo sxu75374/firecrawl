@@ -254,14 +254,17 @@ app.post('/scrape', async (req: Request, res: Response) => {
   try {
     // Extract user-agent from headers to set at the context level, since
     // Playwright's context-level userAgent takes precedence over extraHTTPHeaders.
-    const customUserAgent = headers?.['user-agent'] || headers?.['User-Agent'];
+    const uaKey = headers ? Object.keys(headers).find(k => k.toLowerCase() === 'user-agent') : undefined;
+    const customUserAgent = uaKey ? headers[uaKey] : undefined;
     requestContext = await createContext(skip_tls_verification, customUserAgent);
     page = await requestContext.newPage();
 
     if (headers) {
       // Remove user-agent from extra headers since it's already set on the context.
       // Playwright ignores user-agent in extraHTTPHeaders when context userAgent is set.
-      const { 'user-agent': _ua, 'User-Agent': _UA, ...restHeaders } = headers;
+      const restHeaders = Object.fromEntries(
+        Object.entries(headers).filter(([k]) => k.toLowerCase() !== 'user-agent')
+      );
       if (Object.keys(restHeaders).length > 0) {
         await page.setExtraHTTPHeaders(restHeaders);
       }
